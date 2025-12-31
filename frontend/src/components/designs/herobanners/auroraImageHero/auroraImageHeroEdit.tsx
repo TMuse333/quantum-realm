@@ -3,17 +3,17 @@
 import { useEffect, useState } from "react";
 import { useMotionTemplate, useMotionValue, motion, animate } from "framer-motion";
 import Image from "next/image";
-import { EditableComponent,EditorialComponentProps } from "@/types/editorial";
+import { EditableComponent } from "@/types/editorial";;
+import { EditorialComponentProps } from "@/types/editorial";
 import { useComponentEditor } from "@/context/context";
 import { extractTextProps, handleComponentClick, useSyncColorEdits, useSyncLlmOutput, useSyncPageDataToComponent, useSyncTextToPage,
  } from '../../../../lib/hooks/hooks';
 import EditableTextField from "@/components/editor/editableTextField/editableTextArea";
 import useWebsiteStore from "@/stores/websiteStore";
-import { auroraImageHeroDetails } from ".";
+import { auroraImageHeroDetails, defaultAuroraImageHeroProps } from ".";
 import { AuroraImageHeroProps } from ".";
 import { deriveColorPalette, useAnimatedGradient } from "@/lib/colorUtils";
 import ImageField from "@/components/editor/imageField/imageField";
-import { defaultAuroraImageHeroProps } from ".";
 
 const AuroraImageHeroEdit: React.FC<EditorialComponentProps> = ({ id }) => {
   const [componentProps, setComponentProps] = useState<AuroraImageHeroProps>(defaultAuroraImageHeroProps);
@@ -40,10 +40,6 @@ const AuroraImageHeroEdit: React.FC<EditorialComponentProps> = ({ id }) => {
   const updateComponentProps = useWebsiteStore((state) => state.updateComponentProps);
   const currentPageSlug = useWebsiteStore((state) => state.currentPageSlug);
 
-  const currentPageData = useWebsiteStore((state) => state.currentPageData);
-
-  console.log(`[AuroraImageHero] Component rendering with id: ${id}`);
-
   useSyncLlmOutput(
     currentComponent?.name,
     "AuroraImageHero",
@@ -58,33 +54,38 @@ const AuroraImageHeroEdit: React.FC<EditorialComponentProps> = ({ id }) => {
     "AuroraImageHero",
     setComponentProps,
     currentColorEdits,
-    id // Component ID - updateComponentProps is automatically retrieved from store
-  )
+    id  // Pass component ID to avoid auto-detection issues
+  );
+
+  useSyncPageDataToComponent(id, "AuroraImageHero", setComponentProps);
 
   const onClick = () => {
     handleComponentClick({
       currentComponent: currentComponent!,
       componentDetails: auroraImageHeroDetails,
       setCurrentComponent,
-      setAssistantMessage
+      setAssistantMessage,
     });
     setCurrentColorEdits({
       textColor: colors.textColor,
       baseBgColor: colors.baseBgColor,
       mainColor: colors.mainColor,
-      bgLayout: colors.bgLayout
-    })
+      bgLayout: colors.bgLayout,
+    });
   };
 
-  useSyncPageDataToComponent(
-    id,
-    'AuroraImageHero',
-    setComponentProps,
-  )
-
   const updateProp = <K extends keyof AuroraImageHeroProps>(key: K, value: AuroraImageHeroProps[K]) => {
+    console.log("🔵 [AuroraImageHeroEdit] updateProp called:", {
+      key,
+      value,
+      currentPageSlug,
+      componentId: id,
+    });
+
     setComponentProps((prev) => ({ ...prev, [key]: value }));
     updateComponentProps(currentPageSlug, id, { [key]: value });
+
+    console.log("✅ [AuroraImageHeroEdit] Called updateComponentProps");
   };
 
   const backgroundImage = useAnimatedGradient(propsWithDefaults.bgLayout!, colors)
